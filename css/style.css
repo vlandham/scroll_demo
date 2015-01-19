@@ -1,0 +1,44 @@
+
+#graphic {
+  padding-top: 60px;
+}
+
+#steps {
+  position: relative;
+  display: inline-block;
+  width: 250px;
+  top: 0px;
+  z-index: 90;
+}
+
+.step {
+  margin-bottom: 150px;
+  font-family: "TiemposTextWeb-Regular","Georgia";
+  font-size: 16px;
+  line-height: 23px;
+  color: #767678;
+}
+
+.title {
+  font-family: "HaasTextBold",Arial,Helvetica;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 2px;
+  color: #262626;
+  line-height: 1.2em;
+}
+
+#extra-space {
+  height: 800px;
+}
+
+#graph {
+  display: inline-block;
+  position: fixed;
+  top: 60px;
+  height: 600px;
+  width: 600px;
+  z-index: 1;
+  margin-left: 0px;
+  background-color: #ddd;
+}
