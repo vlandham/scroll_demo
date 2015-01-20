@@ -4,7 +4,7 @@ function scroller() {
   var dispatch = d3.dispatch("scroll", "active");
   var steps = [];
   var stepPositions = [];
-  var currentIndex = 0;
+  var currentIndex = -1;
   var containerStart = 0;
 
   function scroll(els) {
@@ -15,6 +15,10 @@ function scroller() {
       .on("resize.scroller", resize);
 
     resize();
+    d3.timer(function() {
+      position();
+      return true;
+    });
 
   }
 
@@ -64,5 +68,9 @@ var scroll = scroller()
 scroll(d3.selectAll('.step'));
 
 scroll.on('active', function(index){
+
+  d3.selectAll('.step')
+    .style('opacity',  function(d,i) { return i == index ? 1 : 0.1; });
+
   console.log(index);
 });
