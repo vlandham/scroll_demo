@@ -1,7 +1,7 @@
 function scroller() {
   var windowHeight;
   var container = d3.select('body');
-  var dispatch = d3.dispatch("scroll", "active");
+  var dispatch = d3.dispatch("scroll", "active", "percent");
   var steps = [];
   var stepPositions = [];
   var currentIndex = -1;
@@ -23,12 +23,18 @@ function scroller() {
   }
 
   function position() {
-    var i1 = d3.bisect(stepPositions, pageYOffset - 10 - containerStart);
+    var pos = pageYOffset - 10 - containerStart;
+    var i1 = d3.bisect(stepPositions, pos);
     i1 = Math.min(steps.size() - 1, i1);
+
+    var i0 = Math.min(steps.size() - 1, i1 - 1);
+    i0 = Math.max(0, i0);
+    var percent = ((pos - stepPositions[i0]) / (stepPositions[i1] - stepPositions[i0])) * 100.0;
     if (currentIndex !== i1) {
       dispatch.active(i1);
       currentIndex = i1;
     }
+    dispatch.percent(currentIndex, percent);
 
   }
 
@@ -44,6 +50,7 @@ function scroller() {
     containerStart = container.node().getBoundingClientRect().top + pageYOffset;
 
     console.log("containerStart: " + containerStart);
+    console.log("step poss");
     console.log(stepPositions);
   }
 
@@ -72,5 +79,8 @@ scroll.on('active', function(index){
   d3.selectAll('.step')
     .style('opacity',  function(d,i) { return i == index ? 1 : 0.1; });
 
-  console.log(index);
+});
+
+scroll.on('percent', function(index, percent){
+  console.log(percent);
 });
