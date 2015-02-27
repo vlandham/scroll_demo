@@ -12,7 +12,7 @@
 }
 
 .step {
-  margin-bottom: 150px;
+  margin-bottom: 200px;
   font-family: "TiemposTextWeb-Regular","Georgia";
   font-size: 16px;
   line-height: 23px;
@@ -42,3 +42,11 @@
   margin-left: 0px;
   background-color: #ddd;
 }
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #666;
+  shape-rendering: crispEdges;
+}
+
