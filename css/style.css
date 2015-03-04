@@ -36,11 +36,11 @@
   display: inline-block;
   position: fixed;
   top: 60px;
-  height: 600px;
-  width: 600px;
+  /* height: 600px; */
+  /* width: 600px; */
   z-index: 1;
   margin-left: 0px;
-  background-color: #ddd;
+  /* background-color: #ddd; */
 }
 
 .axis path,
