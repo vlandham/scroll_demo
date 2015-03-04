@@ -28,7 +28,10 @@ var scrollVis = function() {
     });
   };
 
-  function showCount() {
+  chart.activate = function(index) {
+  };
+
+  showCount = function() {
     g.append("text")
       .attr("class", "count-title")
       .attr("x", width / 2)
@@ -49,14 +52,14 @@ var scrollVis = function() {
       .transition()
       .duration(1200)
       .attr("opacity", 1.0);
-  }
+  };
 
   function hideFillerWords() {
     d3.selectAll(".count-title")
       .attr("opacity", 1e-6);
   }
 
-  function showGrid() {
+  showGrid = function() {
     hideFillerWords();
     var squareSize = 6;
     var squarePad = 2;
@@ -87,7 +90,7 @@ var scrollVis = function() {
 
       });
 
-  }
+  };
 
   function highlightGrid() {
     g.selectAll(".square")
@@ -126,6 +129,8 @@ var scroll = scroller()
 scroll(d3.selectAll('.step'));
 
 scroll.on('active', function(index){
+
+  plot.activate(index);
 
   d3.selectAll('.step')
     .style('opacity',  function(d,i) { return i == index ? 1 : 0.1; });
