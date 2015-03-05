@@ -50,9 +50,9 @@ function scroller() {
     });
     containerStart = container.node().getBoundingClientRect().top + pageYOffset;
 
-    console.log("containerStart: " + containerStart);
-    console.log("step poss");
-    console.log(stepPositions);
+    // console.log("containerStart: " + containerStart);
+    // console.log("step poss");
+    // console.log(stepPositions);
   }
 
   scroll.container = function(value) {
