@@ -29,7 +29,7 @@
 }
 
 #extra-space {
-  height: 800px;
+  height: 300px;
 }
 
 #graph {
@@ -49,4 +49,5 @@
   stroke: #666;
   shape-rendering: crispEdges;
 }
+
 
