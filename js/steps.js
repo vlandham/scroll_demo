@@ -1,5 +1,4 @@
 
-
 var scrollVis = function() {
   var width = 600;
   var height = 520;
@@ -15,7 +14,7 @@ var scrollVis = function() {
   var numPerRow = width / (squareSize + squarePad);
 
   var xHistScale = d3.scale.linear()
-    .domain([0, 1800])
+    .domain([0, 30])
     .range([0, width - 20]);
 
   var yHistScale = d3.scale.linear()
@@ -23,18 +22,27 @@ var scrollVis = function() {
 
   var xBarScale = d3.scale.linear()
     .range([0, width]);
+
   var yBarScale = d3.scale.ordinal()
     .domain([0,1,2])
     .rangeBands([0, height - 50], 0.1, 0.1);
 
   var barColors = {0: "#008080", 1: "#399785", 2: "#5AAF8C"};
+
+  var coughColorScale = d3.scale.linear()
+    .domain([0,1.0])
+    .range(["#008080", "red"]);
   
   var xAxis = d3.svg.axis()
     .scale(xBarScale)
     .orient("bottom");
 
+  var xAxisHist = d3.svg.axis()
+    .scale(xHistScale)
+    .orient("bottom");
+
+  var activateFunctions = [];
   var updateFunctions = [];
-  var percentFunctions = [];
 
   var chart = function(selection) {
     selection.each(function(rawData) {
@@ -42,7 +50,6 @@ var scrollVis = function() {
       fillerWords = getFillerWords(wordData);
 
       fillerCounts = groupByWord(fillerWords);
-      console.log(fillerCounts);
       var countMax = d3.max(fillerCounts, function(d) { return d.values;});
       xBarScale.domain([0,countMax]);
       // yBarScale.domain(fillerCounts.map(function(d) { return d.key; }));
@@ -68,66 +75,56 @@ var scrollVis = function() {
 
       setupVis();
 
-      updateFunctions[0] = showTitle;
-      updateFunctions[1] = showFillerTitle;
-      updateFunctions[2] = showGrid;
-      updateFunctions[3] = highlightGrid;
-      updateFunctions[4] = showBar;
-      updateFunctions[5] = showHistPart;
-      updateFunctions[6] = showHistAll;
-      updateFunctions[7] = showHistAll;
-      updateFunctions[8] = showHistAll;
+      activateFunctions[0] = showTitle;
+      activateFunctions[1] = showFillerTitle;
+      activateFunctions[2] = showGrid;
+      activateFunctions[3] = highlightGrid;
+      activateFunctions[4] = showBar;
+      activateFunctions[5] = showHistPart;
+      activateFunctions[6] = showHistAll;
+      activateFunctions[7] = showCough;
+      activateFunctions[8] = showHistAll;
 
       for(var i = 0; i < 9; i++) {
-        percentFunctions[i] = function() {};
+        updateFunctions[i] = function() {};
       }
 
-      percentFunctions[5] = updateHistPart;
+      updateFunctions[7] = updateCough;
     });
   };
 
   setupVis = function() {
     // count title
     g.append("text")
-      .attr("class", "openvis-title")
+      .attr("class", "title openvis-title")
       .attr("x", width / 2)
       .attr("y", height / 3)
-      .attr("text-anchor", "middle")
-      .attr("font-size", '120px')
       .text("2013");
 
     g.append("text")
-      .attr("class", "openvis-title")
+      .attr("class", "sub-title openvis-title")
       .attr("x", width / 2)
       .attr("y", (height / 3) + (height / 5) )
-      .attr("text-anchor", "middle")
-      .attr("font-size", '80px')
       .text("OpenVis Conf");
 
     g.selectAll(".openvis-title")
       .attr("opacity", 0);
 
-
     // count title
     g.append("text")
-      .attr("class", "count-title")
+      .attr("class", "title count-title highlight")
       .attr("x", width / 2)
       .attr("y", height / 3)
-      .attr("text-anchor", "middle")
-      .attr("font-size", '120px')
       .text("180");
 
     g.append("text")
-      .attr("class", "count-title")
+      .attr("class", "sub-title count-title")
       .attr("x", width / 2)
       .attr("y", (height / 3) + (height / 5) )
-      .attr("text-anchor", "middle")
-      .attr("font-size", '80px')
       .text("Filler Words");
 
     g.selectAll(".count-title")
       .attr("opacity", 0);
-
 
     // square grid
     var squares = g.selectAll(".square").data(wordData);
@@ -168,8 +165,7 @@ var scrollVis = function() {
       .attr("fill", "white");
     barText.attr("opacity", 0);
 
-
-    // hist
+    // histogram
     var hist = g.selectAll(".hist").data(histData);
     hist.enter().append("rect")
       .attr("class", "hist")
@@ -180,8 +176,16 @@ var scrollVis = function() {
       .attr("fill", barColors[0])
       .attr("opacity", 0);
 
+    // cough title
+    g.append("text")
+      .attr("class", "sub-title cough-title")
+      .attr("x", width / 2)
+      .attr("y", 80)
+      .text("cough")
+      .attr("opacity", 0);
+
     // axis
-    g.select(".x.axis").style("opacity",0);
+    g.select(".x.axis").style("opacity", 0);
   };
 
 
@@ -229,10 +233,19 @@ var scrollVis = function() {
 
     g.selectAll(".square")
       .transition()
+      .duration(0)
+      .attr("x", function(d,i) { 
+        return d.x;
+      })
+      .attr("y", function(d,i) {
+        return d.y;
+      });
+
+    g.selectAll(".square")
+      .transition()
       .duration(600)
       .delay(function(d,i) { 
-        var row = Math.floor(i / numPerRow);
-        return 5 * row;
+        return 5 * d.row;
       })
       .attr("opacity", 1.0)
       .attr("fill", "#ddd");
@@ -253,32 +266,32 @@ var scrollVis = function() {
     var t = d3.transition().duration(500);
     t.select(".x.axis").style("opacity",0);
 
-
-    var t2 = d3.transition().duration(800);
-    t2.selectAll(".square")
-      .attr("x", function(d,i) { 
-        return d.x;
-      })
-      .attr("y", function(d,i) {
-        return d.y;
-      })
-      .attr("fill", "#ddd")
-      .attr("opacity", 1.0);
+    g.selectAll(".square")
+      .transition()
+      .duration(0)
+      .attr("opacity", 1.0)
+      .attr("fill", "#ddd");
 
     g.selectAll(".fill-square")
-      .transition()
+      .transition("move-fills")
       .duration(800)
       .attr("x", function(d,i) { 
         return d.x;
       })
       .attr("y", function(d,i) {
         return d.y;
-      })
+      });
+
+    g.selectAll(".fill-square")
+      .transition()
+      .duration(800)
       .attr("opacity", 1.0)
       .attr("fill", function(d) { return d.filler ? '#008080' : '#ddd'; });
   }
 
   function showBar() {
+    g.select(".x.axis")
+      .call(xAxis);
     var t = d3.transition().duration(500);
     t.select(".x.axis").style("opacity",1);
 
@@ -310,7 +323,6 @@ var scrollVis = function() {
       .delay(1200)
       .attr("opacity", 1);
 
-
     g.selectAll(".hist")
       .transition()
       .duration(600)
@@ -320,6 +332,8 @@ var scrollVis = function() {
   }
 
   function showHistPart(percent) {
+    g.select(".x.axis")
+      .call(xAxisHist);
     var t = d3.transition().duration(500);
     t.select(".x.axis").style("opacity",1);
 
@@ -332,21 +346,26 @@ var scrollVis = function() {
       .transition()
       .duration(600)
       .attr("width", 0);
-  }
 
-  function updateHistPart(progress) {
     g.selectAll(".hist")
       .transition()
-      .duration(0)
-      .attr("height", function(d) { return (d.x < 960) ? ((height) - (yHistScale(d.y)))  : 0; })
-      .attr("y", function(d) { return (d.x < 960) ? (yHistScale(d.y) * progress) + (height * (1 - progress)) : yHistScale(0); })
-      .style("opacity", function(d,i) { return (d.x < 960) ? 1.0 : 1e-6; });
-
+      .duration(600)
+      .attr("y", function(d) { return (d.x < 15) ? yHistScale(d.y) : height; })
+      .attr("height", function(d) { return (d.x < 15) ? height - yHistScale(d.y) : 0;  })
+      .style("opacity", function(d,i) { return (d.x < 15) ? 1.0 : 1e-6; });
   }
 
   function showHistAll() {
+    g.select(".x.axis")
+      .call(xAxisHist);
     var t = d3.transition().duration(500);
     t.select(".x.axis").style("opacity",1);
+
+    g.selectAll(".cough-title")
+      .transition()
+      .duration(0)
+      .attr("opacity", 0);
+
     g.selectAll(".hist")
       .transition()
       .duration(1200)
@@ -355,28 +374,63 @@ var scrollVis = function() {
       .style("opacity", 1.0);
   }
 
+  function showCough() {
+    g.select(".x.axis")
+      .call(xAxisHist);
+    var t = d3.transition().duration(500);
+    t.select(".x.axis").style("opacity",1);
+    g.selectAll(".hist")
+      .transition()
+      .duration(600)
+      .attr("y", function(d) { return yHistScale(d.y); })
+      .attr("height", function(d) { return  height - yHistScale(d.y);  })
+      .style("opacity", 1.0);
+  }
+
+  function updateCough(progress) {
+    g.selectAll(".cough-title")
+      .transition()
+      .duration(0)
+      .attr("opacity", progress);
+
+    g.selectAll(".hist")
+      .transition("cough")
+      .duration(0)
+      .style("fill", function(d,i) { 
+        return (d.x >= 14) ? coughColorScale(progress) : "#008080"; 
+      });
+
+  }
 
   function processData(rawData) {
     return rawData.map(function(d,i) {
+      // is this word a filler word?
       d.filler = (d.filler === "1") ? true : false;
+      // time in seconds word was spoken
       d.time = +d.time;
+      // time in minutes word was spoken
       d.min = Math.floor(d.time / 60);
-      var col = i % numPerRow;
-      d.x = col * (squareSize + squarePad);
-      var row = Math.floor(i / numPerRow);
-      d.y = row * (squareSize + squarePad);
+
+      // positioning for square visual
+      // stored here to make it easier
+      // to keep track of.
+      d.col = i % numPerRow;
+      d.x = d.col * (squareSize + squarePad);
+      d.row = Math.floor(i / numPerRow);
+      d.y = d.row * (squareSize + squarePad);
       return d;
     });
   }
 
   function getHistogram(data) {
-    var thirtymins = data.filter(function(d) { return d.time < 1800; });
-    var hdata = d3.layout.histogram()
-      .value(function(d) { return d.time; })
-      // .bins(15)
-      .bins(d3.range(0,1860,120))
-      (thirtymins);
-    return hdata;
+    // only get words from the first 30 minutes
+    var thirtyMins = data.filter(function(d) { return d.min < 30; });
+    // bin data into 2 minutes chuncks
+    // from 0 - 31 minutes
+    return d3.layout.histogram()
+      .value(function(d) { return d.min; })
+      .bins(d3.range(0,31,2))
+      (thirtyMins);
   }
 
   function getFillerWords(data) {
@@ -392,42 +446,35 @@ var scrollVis = function() {
   }
 
   chart.activate = function(index) {
-    console.log("activating " + index);
-    updateFunctions[index]();
+    activateFunctions[index]();
   };
 
-  chart.update = function(index, percent) {
-    console.log("percent " + percent);
-    percentFunctions[index](percent);
+  chart.update = function(index, progress) {
+    updateFunctions[index](progress);
   };
  
   return chart;
 };
 
-var plotData = function(selector, data, plot) {
-  return selector
-  .datum(data)
-  .call(plot);
-};
-
 var plot = scrollVis();
 
-
 function display(data) {
-  plotData(d3.select("#graph"), data, plot);
+  d3.select("#graph")
+    .datum(data)
+    .call(plot);
+
   var scroll = scroller()
-  .container(d3.select('#graphic'));
+    .container(d3.select('#graphic'));
 
   scroll(d3.selectAll('.step'));
 
   scroll.on('active', function(index){
-
     plot.activate(index);
 
     d3.selectAll('.step')
-    .style('opacity',  function(d,i) { return i == index ? 1 : 0.1; });
-
+      .style('opacity',  function(d,i) { return i == index ? 1 : 0.1; });
   });
+
   scroll.on('progress', function(index, progress){
     plot.update(index, progress);
   });
