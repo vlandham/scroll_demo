@@ -1,71 +1,136 @@
 
+/**
+ * scroller - handles the details
+ * of figuring out which section
+ * the user is currently scrolled
+ * to.
+ *
+ */
 function scroller() {
   var windowHeight;
   var container = d3.select('body');
-  var dispatch = d3.dispatch("scroll", "active", "progress");
-  var steps = [];
-  var stepPositions = [];
+  // event dispatcher
+  var dispatch = d3.dispatch("active", "progress");
+
+  // d3 selection of all the
+  // text sections that will
+  // be scrolled through
+  var sections = null;
+
+  // array that will hold the
+  // y coordinate of each section
+  // that is scrolled through
+  var sectionPositions = [];
   var currentIndex = -1;
+  // y coordinate of
   var containerStart = 0;
 
+  /**
+   * scroll - constructor function.
+   * Sets up scroller to monitor
+   * scrolling of els selection.
+   *
+   * @param els - d3 selection of
+   *  elements that will be scrolled
+   *  through by user.
+   */
   function scroll(els) {
-    steps = els;
+    sections = els;
 
+    // when window is scrolled call
+    // position. When it is resized
+    // call resize.
     d3.select(window)
       .on("scroll.scroller", position)
       .on("resize.scroller", resize);
 
+    // manually call resize
+    // initially to setup
+    // scroller.
     resize();
+
+    // hack to get position
+    // to be called once for
+    // the scroll position on
+    // load.
     d3.timer(function() {
       position();
       return true;
     });
-
   }
 
-  function position() {
-    var pos = pageYOffset - 10 - containerStart;
-    var i1 = d3.bisect(stepPositions, pos);
-    i1 = Math.min(steps.size() - 1, i1);
+  /**
+   * resize - called initially and
+   * also when page is resized.
+   * Resets the sectionPositions
+   *
+   * @return {undefined}
+   */
+  function resize() {
+    // sectionPositions will be each sections
+    // starting position relative to the top
+    // of the first section.
+    sectionPositions = [];
+    var startPos;
+    sections.each(function(d,i) {
+      if(i === 0) {
+        startPos = this.getBoundingClientRect().top;
+      }
+      sectionPositions.push(this.getBoundingClientRect().top - startPos);
+    });
+    console.log('resize');
+    console.log(pageYOffset);
+    console.log(sectionPositions);
+    containerStart = container.node().getBoundingClientRect().top + pageYOffset;
+  }
 
-    var i0 = Math.min(steps.size() - 1, i1 - 1);
+  /**
+   * position - get current users position.
+   * if user has scrolled to new section,
+   * dispatch active event with new section
+   * index.
+   *
+   * @return {undefined}
+   */
+  function position() {
+    console.log('position');
+    console.log(pageYOffset);
+    console.log(containerStart);
+    var pos = pageYOffset - 10 - containerStart;
+    console.log(pos);
+    var i1 = d3.bisect(sectionPositions, pos);
+    i1 = Math.min(sections.size() - 1, i1);
+
+    var i0 = Math.min(sections.size() - 1, i1 - 1);
     i0 = Math.max(0, i0);
-    var progress = ((pos - stepPositions[i0]) / (stepPositions[i1] - stepPositions[i0]));
+    var progress = ((pos - sectionPositions[i0]) / (sectionPositions[i1] - sectionPositions[i0]));
     if (currentIndex !== i1) {
       dispatch.active(i1);
       currentIndex = i1;
     }
     dispatch.progress(currentIndex, progress);
-
   }
 
-  function resize() {
-    stepPositions = [];
-    var startPos;
-    steps.each(function(d,i) {
-      if(i === 0) {
-        startPos = this.getBoundingClientRect().top;
-      }
-      stepPositions.push(this.getBoundingClientRect().top - startPos);
-    });
-    containerStart = container.node().getBoundingClientRect().top + pageYOffset;
-
-    // console.log("containerStart: " + containerStart);
-    // console.log("step poss");
-    // console.log(stepPositions);
-  }
-
+  /**
+   * container - get/set the parent element
+   * of the sections. Useful for if the
+   * scrolling doesn't start at the very top
+   * of the page.
+   *
+   * @param value
+   */
   scroll.container = function(value) {
     if (arguments.length === 0) {
       return container;
     }
-
     container = value;
     return scroll;
   };
 
+  // allows us to bind to scroller events
+  // which will interally be handled by
+  // the dispatcher.
   d3.rebind(scroll, dispatch, "on");
 
   return scroll;
-
 }

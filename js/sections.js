@@ -93,7 +93,6 @@ var scrollVis = function() {
    */
   var chart = function(selection) {
     selection.each(function(rawData) {
-
       // create svg and give it a width and height
       var svg = d3.select(this).selectAll("svg").data([wordData]);
       svg.enter().append("svg").append("g");
@@ -142,7 +141,6 @@ var scrollVis = function() {
    * @param histData - binned histogram data
    */
   setupVis = function(wordData, fillerCounts, histData) {
-
     // axis
     g.append("g")
       .attr("class", "x axis")
@@ -237,7 +235,6 @@ var scrollVis = function() {
       .attr("y", 80)
       .text("cough")
       .attr("opacity", 0);
-
   };
 
   /**
@@ -365,6 +362,7 @@ var scrollVis = function() {
    *  are moved back to their place in the grid
    */
   function highlightGrid() {
+    hideAxis();
     g.selectAll(".bar")
       .transition()
       .duration(600)
@@ -375,9 +373,6 @@ var scrollVis = function() {
       .duration(0)
       .attr("opacity", 0);
 
-    g.select(".x.axis")
-      .transition().duration(500)
-      .style("opacity",0);
 
     g.selectAll(".square")
       .transition()
@@ -386,8 +381,8 @@ var scrollVis = function() {
       .attr("fill", "#ddd");
 
     // use named transition to ensure
-    // move happens even if other transitions
-    // are interrupted.
+    // move happens even if other
+    // transitions are interrupted.
     g.selectAll(".fill-square")
       .transition("move-fills")
       .duration(800)
@@ -414,10 +409,8 @@ var scrollVis = function() {
    *
    */
   function showBar() {
-    g.select(".x.axis")
-      .call(xAxisBar)
-      .transition().duration(500)
-      .style("opacity", 1);
+    // ensure bar axis is set
+    showAxis(xAxisBar);
 
     g.selectAll(".square")
       .transition()
@@ -453,18 +446,20 @@ var scrollVis = function() {
       .duration(600)
       .delay(1200)
       .attr("opacity", 1);
-
   }
 
   /**
-   * showHistPart
+   * showHistPart - shows the first part
+   *  of the histogram of filler words
+   *
+   * hides: barchart
+   * hides: last half of histogram
+   * shows: first half of histogram
    *
    */
   function showHistPart() {
-    g.select(".x.axis")
-      .call(xAxisHist);
-    var t = d3.transition().duration(500);
-    t.select(".x.axis").style("opacity",1);
+    // switch the axis to histogram one
+    showAxis(xAxisHist);
 
     g.selectAll(".bar-text")
       .transition()
@@ -476,6 +471,8 @@ var scrollVis = function() {
       .duration(600)
       .attr("width", 0);
 
+    // here we only show a bar if
+    // it is before the 15 minute mark
     g.selectAll(".hist")
       .transition()
       .duration(600)
@@ -485,20 +482,30 @@ var scrollVis = function() {
   }
 
   /**
-   * showHistAll
+   * showHistAll - show all histogram
    *
-   * @return {undefined}
+   * hides: cough title and color
+   * (previous step is also part of the
+   *  histogram, so we don't have to hide
+   *  that)
+   * shows: all histogram bars
+   *
    */
   function showHistAll() {
-    g.select(".x.axis")
-      .call(xAxisHist);
-    var t = d3.transition().duration(500);
-    t.select(".x.axis").style("opacity",1);
+    // ensure the axis to histogram one
+    showAxis(xAxisHist);
 
     g.selectAll(".cough-title")
       .transition()
       .duration(0)
       .attr("opacity", 0);
+
+    // named transition to ensure
+    // color change is not clobbered
+    g.selectAll(".hist")
+      .transition("color")
+      .duration(500)
+      .style("fill", "#008080");
 
     g.selectAll(".hist")
       .transition()
@@ -511,13 +518,16 @@ var scrollVis = function() {
   /**
    * showCough
    *
-   * @return {undefined}
+   * hides: nothing
+   * (previous and next sections are histograms
+   *  so we don't have to hide much here)
+   * shows: histogram
+   *
    */
   function showCough() {
-    g.select(".x.axis")
-      .call(xAxisHist);
-    var t = d3.transition().duration(500);
-    t.select(".x.axis").style("opacity",1);
+    // ensure the axis to histogram one
+    showAxis(xAxisHist);
+
     g.selectAll(".hist")
       .transition()
       .duration(600)
@@ -527,14 +537,49 @@ var scrollVis = function() {
   }
 
   /**
+   * showAxis - helper function to
+   * display particular xAxis
+   *
+   * @param axis - the axis to show
+   *  (xAxisHist or xAxisBar)
+   */
+  function showAxis(axis) {
+    g.select(".x.axis")
+      .call(axis)
+      .transition().duration(500)
+      .style("opacity", 1);
+  }
+
+  /**
+   * hideAxis - helper function
+   * to hide the axis
+   *
+   */
+  function hideAxis() {
+    g.select(".x.axis")
+      .transition().duration(500)
+      .style("opacity",0);
+  }
+
+  /**
    * UPDATE FUNCTIONS
    *
-   * These will
+   * These will be called within a section
+   * as the user scrolls through it.
    *
-   * General pattern
+   * We use an immediate transition to
+   * update visual elements based on
+   * how far the user has scrolled
    *
    */
 
+  /**
+   * updateCough - increase/decrease
+   * cough text and color
+   *
+   * @param progress - 0.0 - 1.0 -
+   *  how far user has scrolled in section
+   */
   function updateCough(progress) {
     g.selectAll(".cough-title")
       .transition()
@@ -588,10 +633,23 @@ var scrollVis = function() {
     });
   }
 
+  /**
+   * getFillerWords - returns array of
+   * only filler words
+   *
+   * @param data - word data from getWords
+   */
   function getFillerWords(data) {
     return data.filter(function(d) {return d.filler; });
   }
 
+  /**
+   * getHistogram - use d3's histogram layout
+   * to generate histogram bins for our word data
+   *
+   * @param data - word data. we use filler words
+   *  from getFillerWords
+   */
   function getHistogram(data) {
     // only get words from the first 30 minutes
     var thirtyMins = data.filter(function(d) { return d.min < 30; });
@@ -603,6 +661,13 @@ var scrollVis = function() {
       (thirtyMins);
   }
 
+  /**
+   * groupByWord - group words together
+   * using nest. Used to get counts for
+   * barcharts.
+   *
+   * @param words
+   */
   function groupByWord(words) {
     return d3.nest()
       .key(function(d) { return d.word; })
@@ -639,9 +704,19 @@ var scrollVis = function() {
   return chart;
 };
 
-var plot = scrollVis();
 
+/**
+ * display - called once data
+ * has been loaded.
+ * sets up the scroller and
+ * displays the visualization.
+ *
+ * @param data - loaded tsv data
+ */
 function display(data) {
+  // create a new plot and
+  // display it
+  var plot = scrollVis();
   d3.select("#graph")
     .datum(data)
     .call(plot);
@@ -650,13 +725,17 @@ function display(data) {
   var scroll = scroller()
     .container(d3.select('#graphic'));
 
+  // pass in .step selection as the steps
   scroll(d3.selectAll('.step'));
 
+  // setup event handling
   scroll.on('active', function(index){
-    plot.activate(index);
-
+    // highlight current step text
     d3.selectAll('.step')
       .style('opacity',  function(d,i) { return i == index ? 1 : 0.1; });
+
+    // activate current section
+    plot.activate(index);
   });
 
   scroll.on('progress', function(index, progress){
