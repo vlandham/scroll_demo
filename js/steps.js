@@ -1,17 +1,33 @@
 
+/**
+ * scrollVis - encapsulates
+ * all the code for the visualization
+ * using reusable charts pattern:
+ * http://bost.ocks.org/mike/chart/
+ */
 var scrollVis = function() {
+  // constants to define the size
+  // and margins of the vis area.
   var width = 600;
   var height = 520;
   var margin = {top:0, left:10, bottom:40, right:10};
-  
-  var g = null;
-  var wordData = [];
-  var histData = [];
 
+  // Keep track of which visualization 
+  // we are on and which was the last
+  // index activated. When user scrolls
+  // quickly, we want to call all the
+  // activate functions that they pass.
+  var lastIndex = -1;
+  var activeIndex = 0;
 
+  // Sizing for the grid visualization
   var squareSize = 6;
   var squarePad = 2;
   var numPerRow = width / (squareSize + squarePad);
+
+  // d3 selection that will be used
+  // for displaying visualizations
+  var g = null;
 
   var xHistScale = d3.scale.linear()
     .domain([0, 30])
@@ -73,7 +89,7 @@ var scrollVis = function() {
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
 
-      setupVis();
+      setupVis(wordData, histData);
 
       activateFunctions[0] = showTitle;
       activateFunctions[1] = showFillerTitle;
@@ -93,7 +109,7 @@ var scrollVis = function() {
     });
   };
 
-  setupVis = function() {
+  setupVis = function(wordData, histData) {
     // count title
     g.append("text")
       .attr("class", "title openvis-title")
@@ -446,7 +462,12 @@ var scrollVis = function() {
   }
 
   chart.activate = function(index) {
-    activateFunctions[index]();
+    activeIndex = index;
+    var sign = activeIndex - lastIndex < 0 ? -1 : 1;
+    d3.range(lastIndex + sign, activeIndex + sign, sign).forEach(function(i){
+      activateFunctions[i]();
+    });
+    lastIndex = activeIndex;
   };
 
   chart.update = function(index, progress) {
