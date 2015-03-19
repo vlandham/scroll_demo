@@ -3,7 +3,7 @@
   padding-top: 60px;
 }
 
-#steps {
+#sections {
   position: relative;
   display: inline-block;
   width: 250px;
@@ -19,7 +19,7 @@
   color: #767678;
 }
 
-#steps .title {
+#sections .title {
   font-family: Arial,Helvetica,"san-serif";
   font-size: 16px;
   font-weight: bold;
