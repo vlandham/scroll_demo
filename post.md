@@ -239,6 +239,33 @@ Check out the details [in the example](https://github.com/vlandham/scroll_demo/b
 
 ## Progressing Through a Section
 
+So the code we have now will let us get notified when the user scrolls to a different section of text. This is great. It means we will be able to trigger visualization changes on these section changes.
+
+But there are times when you might want to hook up animations within a section as the user scrolls. [Tony Chu](https://twitter.com/tonyhschu) provides a great example of this kind of interaction with his [Let's Free Congress](http://letsfreecongress.org/) project. Scrolling within sections modifies the visuals in interesting and fun ways.
+
+<div class="center">
+<img class="center" src="http://vallandingham.me/images/vis/scroll/freecongress.jpg" alt="basic structure" style=""/>
+</div>
+
+[Inspired by this functionality](http://blog.tonyhschu.ca/post/49488608263/technical-write-up-scroll-linked-animations), we can modify our code slightly to also allow for these kinds of within-section interactions.
+
+Back in our `position` function, I've added this little snippet to the end of the function:
+
+```js
+var prevIndex = Math.max(sectionIndex - 1, 0);
+var prevTop = sectionPositions[prevIndex];
+var progress = (pos - prevTop) / (sectionPositions[sectionIndex] - prevTop);
+dispatch.progress(currentIndex, progress);
+```
+
+Here we just find the previous section's top value and compute how far in to the current section we are at. The number will range from 0.0 to 1.0, and we send that value along with the current index in the `progress` event.
+
+With this little change, we can now get updates as to where the user has scrolled within a section.
+
+Now, let's **finally** use our scroll events to make some visualizations move!
+
+
+
 
 
 

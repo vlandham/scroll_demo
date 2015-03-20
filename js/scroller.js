@@ -98,9 +98,9 @@ function scroller() {
       currentIndex = sectionIndex;
     }
 
-    var prevIndex = Math.min(sections.size() - 1, sectionIndex - 1);
-    prevIndex = Math.max(0, prevIndex);
-    var progress = ((pos - sectionPositions[prevIndex]) / (sectionPositions[sectionIndex] - sectionPositions[prevIndex]));
+    var prevIndex = Math.max(sectionIndex - 1, 0);
+    var prevTop = sectionPositions[prevIndex];
+    var progress = (pos - prevTop) / (sectionPositions[sectionIndex] - prevTop);
     dispatch.progress(currentIndex, progress);
   }
 
