@@ -378,5 +378,60 @@ So, we track the last `activeIndex` we have seen. When `activate` is called, we 
 
 ### Make Everything a Transition
 
-Inside these
+Inside these section functions we are moving around elements and modifying lots of their attributes. The important thing to remember is to make all these modifications [d3.transitions](https://github.com/mbostock/d3/wiki/Transitions), even if you want them to happen immediately. This way, if the user is scrolling from one section to another during a transition, the transition will be interrupted and the transition for the current section will come into effect.
+
+If you want an effect to be immediate, use a duration of `0` for that transition.
+
+```js
+g.selectAll(".bar-text")
+  .transition()
+  .duration(0)
+  .attr("opacity", 0);
+```
+
+If you try to mix transitions with straight attribute modifications, you most likely will end up with visualizations in strange states.
+
+### Use Named Transitions for Transitions that Shouldn't Be Interrupted
+
+For a few of my transitions, like where the little filler squares leave their spot on the grid, they can be interrupted multiple times with fast scrolling and not quite make it back to their spot. The results are less then flattering.
+
+<div class="center">
+<img class="center" src="http://vallandingham.me/images/vis/scroll/bad_squares.png" alt="bad squares" style=""/>
+</div>
+
+This was happening because transitions focused on changing these square's fill value were interrupting this movement transition. I could double check the square's locations in multiple different section functions, but this would complicate these unrelated functions unnecessarily.
+
+Instead, I used the new-ish D3 feature of [named transitions](http://bl.ocks.org/mbostock/5d8039fb983a29e2ad49) to ensure other transitions wouldn't clobber this one.
+
+```js
+g.selectAll(".fill-square")
+  .transition("move-fills")
+  .duration(800)
+  .attr("x", function(d,i) {
+    return d.x;
+  })
+  .attr("y", function(d,i) {
+    return d.y;
+  });
+```
+
+The name allows it to run concurrently with other transitions, ensuring the squares will always make it back to their homes!
+
+I haven't used this feature much, but I'm excited to try it in other complex transition scenarios.
+
+## Go Forth and Scroll
+
+Hopefully with this post I've dispelled some of the dark art of scrolling for you, and for myself.
+
+Scrolling should still be used carefully and with the end user always in mind. And as pros like the New York Times [continue to show us](http://www.nytimes.com/interactive/2015/03/19/upshot/3d-yield-curve-economic-growth.html), sometimes a stepper is exactly the right tool for the job.
+
+But when scrolling is what you want, check out the details of this post and the demo code. And if you want to hear me blather even more about scrolling, then you'll be excited about my upcoming [OpenVis Conf talk](http://openvisconf.com/) on this very subject!
+
+<div class="center">
+<a href="http://vallandingham.me/scroll_demo/"><img class="center" src="http://vallandingham.me/images/vis/scroll/bars.png" alt="measles" style=""/></a>
+</div>
+
+
+As aways, the code for this demo [is on github](https://github.com/vlandham/scroll_demo) Have suggestions or comments or complaints? Let me know!
+
 
