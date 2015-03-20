@@ -88,7 +88,7 @@ The [inline-block](http://learnlayout.com/inline-block.html) display type allows
 I've added a height,width, and background to the `#vis` - just so we can see where it will be. Even without any JavaScript, we can start to see the structure. Pretty cool!
 
 <div class="center">
-<img class="center" src="http://vallandingham.me/images/vis/scroll/structure.jpg" alt="basic structure" style=""/>
+<img class="center" src="http://vallandingham.me/images/vis/scroll/structure.png" alt="basic structure" style=""/>
 </div>
 
 ## A Reusable Scroller
@@ -97,13 +97,15 @@ Now, let's turn to the details of figuring out where the page is scrolled to. Wi
 
 The code for this scroll detection capability is in [scroller.js](https://github.com/vlandham/scroll_demo/blob/gh-pages/js/scroller.js).
 
-The basic idea of what the code does is fairly straightforward. Given a set of `sections`, figure out where these elements are located down the page. When the page is scrolled, figure out which of these elements is currently front-and-center in the browser's [viewport](http://www.quirksmode.org/mobile/viewports.html). If this element is different then the last 'active' element, then switch to this new section and tell the visualization.
+The basic idea of what the code does is fairly straightforward:
+
+Given a set of `sections`, figure out where these elements are located vertically down the page. When the page is scrolled, figure out which of these elements is currently front-and-center in the browser's [viewport](http://www.quirksmode.org/mobile/viewports.html). If this element is different then the last 'active' element, then switch to this new section and tell the visualization.
 
 Easy right? Well, plenty of details to get right.
 
 First, our main function takes a D3 selection that indicates the scrollable elements. In the demo, we call it by passing in `d3.selectAll('.step')`, but it is generic enough to accept any selection.
 
-We want to get the y coordinates of where these sections start on the page so that we can find the nearest one as we scroll. There are probably a dozen ways to do this, but here is one:
+We want to get the vertical coordinates of where these sections start on the page so that we can find the nearest one as we scroll. There are probably a dozen ways to do this, but here is one:
 
 ```js
 sectionPositions = [];
@@ -118,8 +120,125 @@ sections.each(function(d,i) {
 });
 ```
 
-here `sections` is again, the text steps that our users will scroll through. We use [getBoundingClientRect](https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect) to get the position of each element. The trick is that this position is _relative to the viewport_. If the user has scrolled partway down the page and then reloads, the `top` value for all the sections they have already passed will be negative.
+Here `sections` is again, the text steps that our users will scroll through. We use [getBoundingClientRect](https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect) to get the position of each element. The trick is that this position is _relative to the viewport_. If the user has scrolled partway down the page and then reloads, the `top` value for all the sections they have already passed will be negative.
 
-To keep things consistent, we make all section positions relative to the first section. So the section at index `0` has a section position of `0` and all other sections follow from that.
+To accommodate this, we make all section positions relative to the first section. So the section at index `0` has a section position of `0` and all other sections follow from that.
+
+`sectionPositions` will be accessible to the code that figures out which section the user has scrolled to, which we will look at next.
+
+## Detecting the Active Section
+
+The next step of our little scrolling algorithm is to detect which section the user is scrolled to. This `position` function will be called initially on load, and then whenever the window is scrolled by binding to the [scroll event](https://developer.mozilla.org/en-US/docs/Web/Events/scroll) like this:
+
+```js
+d3.select(window)
+  .on("scroll.scroller", position);
+```
+
+The `.scroller` suffix is how [event namespaces](https://github.com/mbostock/d3/wiki/Selections#on) are created in D3, so we don't accidentally clobber event binding in other parts of our code.
+
+Here is the `position` function. We will walk through it in detail below:
+
+```js
+function position() {
+  var pos = window.pageYOffset - 10;
+  var sectionIndex = d3.bisect(sectionPositions, pos);
+  sectionIndex = Math.min(sections.size() - 1, sectionIndex);
+
+  if (currentIndex !== sectionIndex) {
+    dispatch.active(sectionIndex);
+    currentIndex = sectionIndex;
+  }
+}
+
+```
+
+The first step is to find `pos` - the users current position on the page. Here, we use [pageYOffset](https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY) which is an alias to `scrollY`. This gives the vertical position on the page that the browser is currently scrolled to. We offset it just a bit with the `- 10`.
+
+Next, we turn to the power of [d3.bisect](https://github.com/mbostock/d3/wiki/Arrays#d3_bisect) to pull out the index of the current section that has been scrolled to. I discussed `d3.bisect` in my [linked small multiples](http://flowingdata.com/2014/10/15/linked-small-multiples/) tutorial, but it merits another look.
+
+Given a sorted array of data and a new data element, `d3.bisect` will find the right spot for inserting that new element in the array to maintain its sorted-ness. Its name comes from the fact that it is performing a [binary search](http://en.wikipedia.org/wiki/Binary_search_algorithm) on the array to find the right spot.
+
+The default bisect provides the index to the right of the insertion point. Using it here, we are asking for the index of the section after the section that was just scrolled passed.
+
+It took me awhile to wrap my head around this, so perhaps an example will help. Here is an array of sorted values:
+
+```js
+var nums = [0,100,200,300];
+```
+
+`d3.bisect` returns the index to the right of a match:
+
+```js
+d3.bisect(nums,0);
+=> 1
+```
+
+And also:
+
+```js
+d3.bisect(nums,99);
+=> 1
+
+d3.bisect(nums,100);
+=> 2
+```
+
+This is why we subtract 10 from the current position, so we start at index 0:
+
+```js
+d3.bisect(nums,-10);
+=> 0
+```
+
+The index can be one past the length of the `sectionPositions` array, so we make sure to keep it within bounds using:
+
+```js
+sectionIndex = Math.min(sections.size() - 1, sectionIndex);
+```
+
+This index serves as the key to the visualization component of our site to know what it should be displaying. If the currently scrolled to section index doesn't match the `currentIndex`, indicate the new index using [d3.event](https://github.com/mbostock/d3/wiki/Selections#d3_event).
+
+## Event Dispatching and Binding
+
+Events are a great way to keep your code de-coupled and free of explicit dependencies, so let's deviate a bit from the code flow to talk about them a bit more.
+
+Like a [lot](http://api.jquery.com/category/events/) of [frameworks](http://backbonejs.org/#Events), D3 has its event generation and dispatching capabilities. Though, this works a bit differently then other eventing libraries I've used.
+
+First, you need to create a dispatcher, using [d3.dispatch](https://github.com/mbostock/d3/wiki/Internals#d3_dispatch). On creation, you indicate the event types the dispatcher will be able to dispatch. For our scroller, our dispatcher code looks like this:
+
+```js
+var dispatch = d3.dispatch("active", "progress");
+```
+
+This means we can dispatch the `active` event and the `progress` event, which we will get to in a bit.
+
+Now these event types are methods on our `dispatch` object. So, as we saw in the `position` function, we can send a new `active` event like so:
+
+```js
+dispatch.active(sectionIndex);
+```
+
+The `sectionIndex` is passed as an input parameter to the handler of this event type.
+
+In our visualization code, we will handle this event by adding a listener to the dispatcher's event using [dispatch.on](https://github.com/mbostock/d3/wiki/Internals#dispatch_on). The code to listen to `active` events will look something like this:
+
+```js
+scroll.on('active', function(index){
+ // ...
+}
+```
+
+One hiccup is that `.on` is a method of the dispatcher, but our `dispatch` object is internal to our scroller code. We don't really want to expose this internal detail to users of `scroller`. A cool trick to solve this issue is to use [d3.rebind](https://github.com/mbostock/d3/wiki/Internals#rebind) to copy our dispatch `.on` method to our `scroller` instance:
+
+```js
+d3.rebind(scroll, dispatch, "on");
+```
+
+Check out the details [in the example](https://github.com/vlandham/scroll_demo/blob/gh-pages/js/scroller.js#L125) but this gives the `scroll` object the power of `.on`, which acts like a pass through - sending it on to the dispatcher to handle things.
+
+## Progressing Through a Section
+
+
 
 

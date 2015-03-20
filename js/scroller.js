@@ -78,7 +78,7 @@ function scroller() {
       }
       sectionPositions.push(top - startPos);
     });
-    containerStart = container.node().getBoundingClientRect().top + pageYOffset;
+    containerStart = container.node().getBoundingClientRect().top + window.pageYOffset;
   }
 
   /**
@@ -89,17 +89,18 @@ function scroller() {
    *
    */
   function position() {
-    var pos = pageYOffset - 10 - containerStart;
-    var i1 = d3.bisect(sectionPositions, pos);
-    i1 = Math.min(sections.size() - 1, i1);
+    var pos = window.pageYOffset - 10 - containerStart;
+    var sectionIndex = d3.bisect(sectionPositions, pos);
+    sectionIndex = Math.min(sections.size() - 1, sectionIndex);
 
-    var i0 = Math.min(sections.size() - 1, i1 - 1);
-    i0 = Math.max(0, i0);
-    var progress = ((pos - sectionPositions[i0]) / (sectionPositions[i1] - sectionPositions[i0]));
-    if (currentIndex !== i1) {
-      dispatch.active(i1);
-      currentIndex = i1;
+    if (currentIndex !== sectionIndex) {
+      dispatch.active(sectionIndex);
+      currentIndex = sectionIndex;
     }
+
+    var prevIndex = Math.min(sections.size() - 1, sectionIndex - 1);
+    prevIndex = Math.max(0, prevIndex);
+    var progress = ((pos - sectionPositions[prevIndex]) / (sectionPositions[sectionIndex] - sectionPositions[prevIndex]));
     dispatch.progress(currentIndex, progress);
   }
 
