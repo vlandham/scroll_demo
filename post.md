@@ -35,5 +35,7 @@ Specifically, it is a story around the frequency of filler words - “ah”, “
 
 Like all great web-based masterpieces, we must start with the basic, but critical task of getting our HTML framework for this visualization in place.
 
-Let’s create a `.sections` div that will be used to hold the text portion of our interactive. Each section of text will live in a separate [section element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/section)
+Let’s create a `.sections` div that will be used to hold the text portion of our interactive. Each section of text will live in a separate [section element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/section). The visualization component go in `.graphic` which is put after `.sections`:
+
+<script src="https://gist.github.com/vlandham/8354a21c83540b692e02.js#file-outline-html"></script>
 
