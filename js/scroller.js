@@ -64,7 +64,6 @@ function scroller() {
    * also when page is resized.
    * Resets the sectionPositions
    *
-   * @return {undefined}
    */
   function resize() {
     // sectionPositions will be each sections
@@ -73,14 +72,12 @@ function scroller() {
     sectionPositions = [];
     var startPos;
     sections.each(function(d,i) {
+      var top = this.getBoundingClientRect().top;
       if(i === 0) {
-        startPos = this.getBoundingClientRect().top;
+        startPos = top;
       }
-      sectionPositions.push(this.getBoundingClientRect().top - startPos);
+      sectionPositions.push(top - startPos);
     });
-    console.log('resize');
-    console.log(pageYOffset);
-    console.log(sectionPositions);
     containerStart = container.node().getBoundingClientRect().top + pageYOffset;
   }
 
@@ -90,14 +87,9 @@ function scroller() {
    * dispatch active event with new section
    * index.
    *
-   * @return {undefined}
    */
   function position() {
-    console.log('position');
-    console.log(pageYOffset);
-    console.log(containerStart);
     var pos = pageYOffset - 10 - containerStart;
-    console.log(pos);
     var i1 = d3.bisect(sectionPositions, pos);
     i1 = Math.min(sections.size() - 1, i1);
 
@@ -117,7 +109,7 @@ function scroller() {
    * scrolling doesn't start at the very top
    * of the page.
    *
-   * @param value
+   * @param value - the new container value
    */
   scroll.container = function(value) {
     if (arguments.length === 0) {

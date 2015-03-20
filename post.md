@@ -29,7 +29,9 @@ I’ve [created a demo](http://vallandingham.me/scroll_demo/) that attempts to e
 <a href="http://vallandingham.me/scroll_demo/"><img class="center" src="http://vallandingham.me/images/vis/scroll/filler_words.jpg" alt="measles" style=""/></a>
 </div>
 
-Specifically, it is a story around the frequency of filler words - “ah”, “um”, and “uh” - said during the talk. Take a look at the demo, and then lets get started with looking under the hood at how to build this.
+Specifically, it is a story around the frequency of filler words - “ah”, “um”, and “uh” - said during the talk. [Take a look](http://vallandingham.me/scroll_demo/), and then lets get started with looking under the hood at how to build this.
+
+As usual, the [code is available on github](https://github.com/vlandham/scroll_demo).
 
 ## The HTML and CSS Structure
 
@@ -81,12 +83,43 @@ Now the CSS needs to get the scrolling text next to the visual display. Here is 
 }
 ```
 
-The [inline-block](http://learnlayout.com/inline-block.html) display type allows us to position the `#sections` and `#vis` elements side-by-side while still providing a width and height. We also make the `#vis` position [fixed](https://developer.mozilla.org/en-US/docs/Web/CSS/position), which makes it stay in the same place, even as we scroll.
+The [inline-block](http://learnlayout.com/inline-block.html) display type allows us to position the `#sections` and `#vis` elements side-by-side while still providing a width and height. We also make the `#vis` position [fixed](https://developer.mozilla.org/en-US/docs/Web/CSS/position), which makes it stay in the same place, even as we scroll. The margin on the `.step` elements ensures we have some space to scroll in for each section.
 
 I've added a height,width, and background to the `#vis` - just so we can see where it will be. Even without any JavaScript, we can start to see the structure. Pretty cool!
 
 <div class="center">
-<img class="center" src="http://vallandingham.me/images/vis/scroll/structure.jpg" alt="world cup" style=""/>
+<img class="center" src="http://vallandingham.me/images/vis/scroll/structure.jpg" alt="basic structure" style=""/>
 </div>
+
+## A Reusable Scroller
+
+Now, let's turn to the details of figuring out where the page is scrolled to. With a bit of work, we can encapsulate most of this code into a stand-alone function that can be reused in other projects. Most of this is based on the Bloomberg Visual's excellent work - so thanks again to Adam Pearce!
+
+The code for this scroll detection capability is in [scroller.js](https://github.com/vlandham/scroll_demo/blob/gh-pages/js/scroller.js).
+
+The basic idea of what the code does is fairly straightforward. Given a set of `sections`, figure out where these elements are located down the page. When the page is scrolled, figure out which of these elements is currently front-and-center in the browser's [viewport](http://www.quirksmode.org/mobile/viewports.html). If this element is different then the last 'active' element, then switch to this new section and tell the visualization.
+
+Easy right? Well, plenty of details to get right.
+
+First, our main function takes a D3 selection that indicates the scrollable elements. In the demo, we call it by passing in `d3.selectAll('.step')`, but it is generic enough to accept any selection.
+
+We want to get the y coordinates of where these sections start on the page so that we can find the nearest one as we scroll. There are probably a dozen ways to do this, but here is one:
+
+```js
+sectionPositions = [];
+var startPos;
+sections.each(function(d,i) {
+  var top = this.getBoundingClientRect().top;
+
+  if(i === 0) {
+    startPos = top;
+  }
+  sectionPositions.push(top - startPos);
+});
+```
+
+here `sections` is again, the text steps that our users will scroll through. We use [getBoundingClientRect](https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect) to get the position of each element. The trick is that this position is _relative to the viewport_. If the user has scrolled partway down the page and then reloads, the `top` value for all the sections they have already passed will be negative.
+
+To keep things consistent, we make all section positions relative to the first section. So the section at index `0` has a section position of `0` and all other sections follow from that.
 
 
