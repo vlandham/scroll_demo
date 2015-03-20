@@ -264,8 +264,119 @@ With this little change, we can now get updates as to where the user has scrolle
 
 Now, let's **finally** use our scroll events to make some visualizations move!
 
+## Visual Transition Tips
 
+With the scrolling events in place, most of the visualization work becomes standard D3 functionality. The [code for this part of the demo](https://github.com/vlandham/scroll_demo/blob/gh-pages/js/sections.js) should be well commented. Its long, but not all that exciting, from a cool-new-code perspective.
 
+But there are still a few details worth talking through. Here are the steps, and perhaps a set of suggested best practices that I've compiled while examining example code and building up this visualization.
 
+### Setup All Visual Elements on Start
 
+Sometimes I enjoy getting the enter, exit, and update functions of D3 working together in the same place. But with so many visual elements, I found it easier to just append all of them at one time during the initialization of the visualization.
+
+`setupVis` is the function that performs this initialization. The elements for each section are added, and then hidden. Here is an example:
+
+```js
+// square grid
+var squares = g.selectAll(".square").data(wordData);
+squares.enter()
+  .append("rect")
+  .attr("width", squareSize)
+  .attr("height", squareSize)
+  .attr("fill", "#fff")
+  .classed("square", true)
+  .classed("fill-square", function(d) { return d.filler; })
+  .attr("x", function(d) { return d.x;})
+  .attr("y", function(d) { return d.y;})
+  .attr("opacity", 0);
+```
+Here, I'm setting up all my `.square`'s with width, height, and position. Then hiding them by setting their opacity to 0.
+
+If you visualization was even more complicated, you could have a separate function for setting up each sections elements to keep things more module.
+
+### Each Section Executes a Function
+
+When the user scrolls to a new section, we want to show the new visuals for this section. Each of these visual changes is encapsulated in its own function
+
+As we will be passed in the index of the current section, we can organize our section functions in an array:
+
+```js
+activateFunctions[0] = showTitle;
+activateFunctions[1] = showFillerTitle;
+activateFunctions[2] = showGrid;
+activateFunctions[3] = highlightGrid;
+activateFunctions[4] = showBar;
+activateFunctions[5] = showHistPart;
+activateFunctions[6] = showHistAll;
+activateFunctions[7] = showCough;
+activateFunctions[8] = showHistAll;
+```
+
+Then bind to the `active` event to activate the right function
+
+```js
+scroll.on('active', function(index){
+  plot.activate(index);
+}
+```
+
+Here, the `activate` function will call the current section's function using this `activateFunctions` array:
+
+```js
+activateFunctions[index]();
+```
+
+It does some other work as well, so we will look at it in more detail in a minute.
+
+Our `progress` event is processed in a similar fashion.
+
+### Section Functions Show Their Section and Hide Their Neighbor Sections
+
+Technically, each section function could comprehensively deal with every single element of the visualization. With a few sections, this might not be terrible, but the complexity would quickly spiral out of control with more sections added.
+
+Fortunately, this is not necessary. If you think about it, a section function really only needs to worry about showing the elements used for that section, and hiding the elements that were used in the section before it. But since a user can scroll both ways, we need to ensure the section that comes _after_ is dealt with as well.
+
+A simple example from the code is the first title section function. As nothing comes before it, it only needs to be concerned with showing its text elements and hiding elements of the title that comes after it in the second section.
+
+```js
+function showTitle() {
+  g.selectAll(".count-title")
+    .transition()
+    .duration(0)
+    .attr("opacity", 0);
+
+  g.selectAll(".openvis-title")
+    .transition()
+    .duration(600)
+    .attr("opacity", 1.0);
+}
+```
+
+### Track Last Section Seen to Deal with Fast Scrolling
+
+Unfortunately, what I've just told you about these simplistic section functions was a lie. A lie I wanted to believe myself. It's true that under normal scrolling conditions, dealing with neighboring sections is all that needs to be done. With speedy scrolling, there is a chance that our scrolling event won't fire for sections that are passed through too quickly.
+
+So there is a chance that these intermediate step functions won't get executed, leaving your visualization in an invalid state.
+
+We could deal with this issue in the scroller code, but that seems a bit too brittle and specific to this particular usecase. Instead, we can perform a little extra work in the `activate` function to ensure all functions that should be executed are.
+
+Here is the full code for `activate`:
+
+```js
+chart.activate = function(index) {
+  activeIndex = index;
+  var sign = (activeIndex - lastIndex) < 0 ? -1 : 1;
+  var scrolledSections = d3.range(lastIndex + sign, activeIndex + sign, sign);
+  scrolledSections.forEach(function(i) {
+    activateFunctions[i]();
+  });
+  lastIndex = activeIndex;
+};
+```
+
+So, we track the last `activeIndex` we have seen. When `activate` is called, we create an array of indexes using [d3.range](https://github.com/mbostock/d3/wiki/Arrays#d3_range). With normal scrolling behavior, this range will just go from the current `activeIndex` to the new one. But with faster scrolling, the array will contain all the in-between steps, so we can call them in the right sequence.
+
+### Make Everything a Transition
+
+Inside these
 

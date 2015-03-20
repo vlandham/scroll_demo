@@ -683,8 +683,9 @@ var scrollVis = function() {
    */
   chart.activate = function(index) {
     activeIndex = index;
-    var sign = activeIndex - lastIndex < 0 ? -1 : 1;
-    d3.range(lastIndex + sign, activeIndex + sign, sign).forEach(function(i){
+    var sign = (activeIndex - lastIndex) < 0 ? -1 : 1;
+    var scrolledSections = d3.range(lastIndex + sign, activeIndex + sign, sign);
+    scrolledSections.forEach(function(i) {
       activateFunctions[i]();
     });
     lastIndex = activeIndex;
