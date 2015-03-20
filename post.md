@@ -35,8 +35,58 @@ Specifically, it is a story around the frequency of filler words - “ah”, “
 
 Like all great web-based masterpieces, we must start with the basic, but critical task of getting our HTML framework for this visualization in place.
 
-Let’s create a `.sections` div that will be used to hold the text portion of our interactive. Each section of text will live in a separate [section element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/section). The visualization component go in `.graphic` which is put after `.sections`:
+Let’s create a `#sections` div that will be used to hold the text portion of our interactive. Each section of text will live in a separate [section element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/section). The visualization component go in `#vis` which is put after `.sections`:
 
-<script src="https://gist.github.com/vlandham/8354a21c83540b692e02.js?file=outline.html"></script>
+```html
+  <div id='graphic'>
+    <div id='sections'>
+      <section class="step">
+        <div class="title">OpenVis Conf 2013</div>
+        I did what no presenter should ever do: I watched my own talk...
+      </section>
+      <section class="step">
+        <!-- another section -->
+      </section>
+    </div>
+    <div id='vis'>
+    </div>
+  </div>
+```
 
-<script src="https://gist.github.com/vlandham/8354a21c83540b692e02.js"></script>
+Now the CSS needs to get the scrolling text next to the visual display. Here is the gist of it:
+
+```css
+#sections {
+  position: relative;
+  display: inline-block;
+  width: 250px;
+  top: 0px;
+  z-index: 90;
+}
+
+.step {
+  margin-bottom: 200px;
+}
+
+#vis {
+  display: inline-block;
+  position: fixed;
+  top: 60px;
+  z-index: 1;
+  margin-left: 0;
+
+  height: 600px;
+  width: 600px;
+  background-color: #ddd;
+}
+```
+
+The [inline-block](http://learnlayout.com/inline-block.html) display type allows us to position the `#sections` and `#vis` elements side-by-side while still providing a width and height. We also make the `#vis` position [fixed](https://developer.mozilla.org/en-US/docs/Web/CSS/position), which makes it stay in the same place, even as we scroll.
+
+I've added a height,width, and background to the `#vis` - just so we can see where it will be. Even without any JavaScript, we can start to see the structure. Pretty cool!
+
+<div class="center">
+<img class="center" src="http://vallandingham.me/images/vis/scroll/structure.jpg" alt="world cup" style=""/>
+</div>
+
+

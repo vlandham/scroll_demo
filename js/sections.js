@@ -717,7 +717,7 @@ function display(data) {
   // create a new plot and
   // display it
   var plot = scrollVis();
-  d3.select("#graph")
+  d3.select("#vis")
     .datum(data)
     .call(plot);
 

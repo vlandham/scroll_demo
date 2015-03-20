@@ -32,7 +32,7 @@
   height: 300px;
 }
 
-#graph {
+#vis {
   display: inline-block;
   position: fixed;
   top: 60px;
@@ -43,12 +43,12 @@
   /* background-color: #ddd; */
 }
 
-#graph .title {
+#vis .title {
   font-size:120px;
   text-anchor: middle;
 }
 
-#graph .sub-title {
+#vis .sub-title {
   font-size:80px;
   text-anchor: middle;
 }
