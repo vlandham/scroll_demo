@@ -39,3 +39,4 @@ Let’s create a `.sections` div that will be used to hold the text portion of o
 
 <script src="https://gist.github.com/vlandham/8354a21c83540b692e02.js?file=outline.html"></script>
 
+<script src="https://gist.github.com/vlandham/8354a21c83540b692e02.js"></script>
