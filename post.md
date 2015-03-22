@@ -1,3 +1,5 @@
+# A Reusable Scroller For
+
 A critical component of successful interactive visualizations is orienting the users to what they are looking at. In a multi-faceted data story, it can be useful to explicitly move a user through the different views of the data.
 
 Previously, we've [looked at steppers](http://vallandingham.me/stepper_steps.html) as a way to implement this guidance system.
@@ -157,7 +159,7 @@ The first step is to find `pos` - the users current position on the page. Here, 
 
 Next, we turn to the power of [d3.bisect](https://github.com/mbostock/d3/wiki/Arrays#d3_bisect) to pull out the index of the current section that has been scrolled to. I discussed `d3.bisect` in my [linked small multiples](http://flowingdata.com/2014/10/15/linked-small-multiples/) tutorial, but it merits another look.
 
-Given a sorted array of data and a new data element, `d3.bisect` will find the right spot for inserting that new element in the array to maintain its sorted-ness. Its name comes from the fact that it is performing a [binary search](http://en.wikipedia.org/wiki/Binary_search_algorithm) on the array to find the right spot.
+Given a sorted array of data and a new data element, `d3.bisect` will find the right spot for inserting that new element in the array to maintain its sorted-ness. It _bisects_ the current array in the right spot to insert the new element. Its does this by performing a [binary search](http://en.wikipedia.org/wiki/Binary_search_algorithm) on the array to find the insertion position.
 
 The default bisect provides the index to the right of the insertion point. Using it here, we are asking for the index of the section after the section that was just scrolled passed.
 
