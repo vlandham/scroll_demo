@@ -1,4 +1,4 @@
-# A Reusable Scroller For
+# So You Want to Build a Scroller
 
 A critical component of successful interactive visualizations is orienting the users to what they are looking at. In a multi-faceted data story, it can be useful to explicitly move a user through the different views of the data.
 
@@ -435,4 +435,4 @@ But when scrolling is what you want, check out the details of this post and the 
 
 As always, the code for this demo [is on github](https://github.com/vlandham/scroll_demo) Have suggestions or comments or complaints? Let me know!
 
-
+An aside: The title comes from the epic Sierra Adventures Game [Quest for Glory I](http://en.wikipedia.org/wiki/Quest_for_Glory) - which I try to bring up in almost every conversation. If you haven't tried it yet, go download [Boxer](http://boxerapp.com/), grab [a copy](http://www.myabandonware.com/game/quest-for-glory-i-so-you-want-to-be-a-hero-1kc) and enjoy. Scrolling can wait for a bit.
