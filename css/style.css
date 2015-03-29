@@ -1,7 +1,12 @@
 
+.container {
+  width: 890px;
+}
+
 #graphic {
   padding-top: 60px;
 }
+
 
 #sections {
   position: relative;
