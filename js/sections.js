@@ -10,7 +10,7 @@ var scrollVis = function() {
   // and margins of the vis area.
   var width = 600;
   var height = 520;
-  var margin = {top:0, left:10, bottom:40, right:10};
+  var margin = {top:0, left:20, bottom:40, right:10};
 
   // Keep track of which visualization
   // we are on and which was the last
@@ -24,6 +24,9 @@ var scrollVis = function() {
   var squareSize = 6;
   var squarePad = 2;
   var numPerRow = width / (squareSize + squarePad);
+
+  // main svg used for visualization
+  var svg = null;
 
   // d3 selection that will be used
   // for displaying visualizations
@@ -72,7 +75,8 @@ var scrollVis = function() {
 
   var xAxisHist = d3.svg.axis()
     .scale(xHistScale)
-    .orient("bottom");
+    .orient("bottom")
+    .tickFormat(function(d) { return d + " min"; });
 
   // When scrolling to a new section
   // the activation function for that
@@ -94,11 +98,12 @@ var scrollVis = function() {
   var chart = function(selection) {
     selection.each(function(rawData) {
       // create svg and give it a width and height
-      var svg = d3.select(this).selectAll("svg").data([wordData]);
+      svg = d3.select(this).selectAll("svg").data([wordData]);
       svg.enter().append("svg").append("g");
 
       svg.attr("width", width + margin.left + margin.right);
       svg.attr("height", height + margin.top + margin.bottom);
+
 
       // this group element will be used to contain all
       // other elements.
@@ -230,10 +235,31 @@ var scrollVis = function() {
 
     // cough title
     g.append("text")
-      .attr("class", "sub-title cough-title")
+      .attr("class", "sub-title cough cough-title")
       .attr("x", width / 2)
-      .attr("y", 80)
+      .attr("y", 60)
       .text("cough")
+      .attr("opacity", 0);
+
+    // arrowhead from
+    // http://logogin.blogspot.com/2013/02/d3js-arrowhead-markers.html
+    svg.append("defs").append("marker")
+      .attr("id", "arrowhead")
+      .attr("refY", 2)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 4)
+      .attr("orient", "auto")
+      .append("path")
+      .attr("d", "M 0,0 V 4 L6,2 Z");
+
+    g.append("path")
+      .attr("class", "cough cough-arrow")
+      .attr("marker-end", "url(#arrowhead)")
+      .attr("d", function() {
+        var line = "M " + ((width / 2) - 10) + " " + 80;
+        line += " l 0 " + 230;
+        return line;
+      })
       .attr("opacity", 0);
   };
 
@@ -495,7 +521,7 @@ var scrollVis = function() {
     // ensure the axis to histogram one
     showAxis(xAxisHist);
 
-    g.selectAll(".cough-title")
+    g.selectAll(".cough")
       .transition()
       .duration(0)
       .attr("opacity", 0);
@@ -581,7 +607,7 @@ var scrollVis = function() {
    *  how far user has scrolled in section
    */
   function updateCough(progress) {
-    g.selectAll(".cough-title")
+    g.selectAll(".cough")
       .transition()
       .duration(0)
       .attr("opacity", progress);
