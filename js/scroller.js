@@ -22,6 +22,7 @@ function scroller() {
   // that is scrolled through
   var sectionPositions = [];
   var currentIndex = -1;
+  var currentPos = -20;
   // y coordinate of
   var containerStart = 0;
 
@@ -78,6 +79,7 @@ function scroller() {
       }
       sectionPositions.push(top - startPos);
     });
+    console.log(sectionPositions);
     containerStart = container.node().getBoundingClientRect().top + window.pageYOffset;
   }
 
@@ -90,8 +92,38 @@ function scroller() {
    */
   function position() {
     var pos = window.pageYOffset - 10 - containerStart;
+    var dir = (pos > currentPos) ? +1 : -1;
+    currentPos = pos;
     var sectionIndex = d3.bisect(sectionPositions, pos);
     sectionIndex = Math.min(sections.size() - 1, sectionIndex);
+
+
+    // get the height of the window
+    var height = window.innerHeight;
+
+    // if we are scrolling down
+    if((dir > 0)) {
+
+      // is the index we think we are at on the screen?
+      var onScreen = (sectionPositions[sectionIndex] < (pos + height));
+
+      // if not, revert
+      if(!onScreen) {
+        console.log('keep current');
+        sectionIndex = currentIndex;
+      }
+      // scrolling down
+    } else {
+      // is the index we think we are at below the screen?
+      var belowScreen = (sectionPositions[sectionIndex] > (pos + height));
+
+
+      // if so, bump it back
+      if(belowScreen) {
+        console.log('use prev');
+        sectionIndex = Math.max(sectionIndex - 1, 0);
+      }
+    }
 
     if (currentIndex !== sectionIndex) {
       dispatch.active(sectionIndex);
