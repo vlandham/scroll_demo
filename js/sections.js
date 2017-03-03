@@ -12,6 +12,9 @@ var scrollVis = function() {
   var height = 520;
   var margin = {top:0, left:20, bottom:40, right:10};
 
+  // Will get populated by the setOtherData() function
+  var otherData = [];
+
   // Keep track of which visualization
   // we are on and which was the last
   // index activated. When user scrolls
@@ -97,6 +100,14 @@ var scrollVis = function() {
    */
   var chart = function(selection) {
     selection.each(function(rawData) {
+
+      // so raw data is the main data source passed in via `datum`
+      console.log('rawData', rawData);
+
+      // but we should also have now `otherData` here too - passed in
+      // with the separate accessor function
+      console.log('otherData', otherData);
+
       // create svg and give it a width and height
       svg = d3.select(this).selectAll("svg").data([wordData]);
       svg.enter().append("svg").append("g");
@@ -718,6 +729,17 @@ var scrollVis = function() {
   };
 
   /**
+   * setOtherData -
+   * this setter can be more complicated - and can even take in
+   * more then one data set - but we can start with just this
+   * to minimize changes in the code.
+   * @param other - array of some other data you want to use
+   */
+  chart.setOtherData = function(other) {
+    otherData = other;
+  };
+
+  /**
    * update
    *
    * @param index
@@ -740,10 +762,14 @@ var scrollVis = function() {
  *
  * @param data - loaded tsv data
  */
-function display(data) {
+function display(error, data, other_data) {
   // create a new plot and
   // display it
   var plot = scrollVis();
+
+  // Here we pass in the other data
+  plot.setOtherData(other_data);
+
   d3.select("#vis")
     .datum(data)
     .call(plot);
@@ -771,5 +797,7 @@ function display(data) {
 }
 
 // load data and display
-d3.tsv("data/words.tsv", display);
-
+queue()
+  .defer(d3.tsv, "data/words.tsv")
+  .defer(d3.csv, "data/other_data.csv")
+  .await(display)
