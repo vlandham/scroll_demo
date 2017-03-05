@@ -41,6 +41,7 @@ var scrollVis = function() {
   // so we can use an ordinal scale
   // to get width and y locations.
   var yBarScale = d3.scaleBand()
+    .paddingInner(0.08)
     .domain([0,1,2])
     .range([0, height - 50], 0.1, 0.1);
 
