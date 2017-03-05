@@ -52,6 +52,9 @@ function scroller() {
     // to be called once for
     // the scroll position on
     // load.
+    // @v4 timer no longer stops if you
+    // return true at the end of the callback
+    // function - so here we stop it explicitly.
     var timer = d3.timer(function () {
       position();
       timer.stop();
@@ -93,6 +96,7 @@ function scroller() {
     sectionIndex = Math.min(sections.size() - 1, sectionIndex);
 
     if (currentIndex !== sectionIndex) {
+      // @v4 you now `.call` the dispatch callback
       dispatch.call('active', this, sectionIndex);
       currentIndex = sectionIndex;
     }
@@ -100,6 +104,7 @@ function scroller() {
     var prevIndex = Math.max(sectionIndex - 1, 0);
     var prevTop = sectionPositions[prevIndex];
     var progress = (pos - prevTop) / (sectionPositions[sectionIndex] - prevTop);
+    // @v4 you now `.call` the dispatch callback
     dispatch.call('progress', this, currentIndex, progress);
   }
 
@@ -119,11 +124,8 @@ function scroller() {
     return scroll;
   };
 
-  // allows us to bind to scroller events
-  // which will interally be handled by
-  // the dispatcher.
-  // d3.rebind(scroll, dispatch, 'on');
-
+  // @v4 There is now no d3.rebind, so this implements
+  // a .on method to pass in a callback to the dispatcher.
   scroll.on = function (action, callback) {
     dispatch.on(action, callback);
   };

@@ -34,12 +34,14 @@ var scrollVis = function () {
 
   // We will set the domain when the
   // data is processed.
+  // @v4 using new scale names
   var xBarScale = d3.scaleLinear()
     .range([0, width]);
 
   // The bar chart display is horizontal
   // so we can use an ordinal scale
   // to get width and y locations.
+  // @v4 using new scale type
   var yBarScale = d3.scaleBand()
     .paddingInner(0.08)
     .domain([0, 1, 2])
@@ -51,10 +53,12 @@ var scrollVis = function () {
   // The histogram display shows the
   // first 30 minutes of data
   // so the range goes from 0 to 30
+  // @v4 using new scale name
   var xHistScale = d3.scaleLinear()
     .domain([0, 30])
     .range([0, width - 20]);
 
+  // @v4 using new scale name
   var yHistScale = d3.scaleLinear()
     .range([height, 0]);
 
@@ -62,6 +66,7 @@ var scrollVis = function () {
   // scale to convert the progress
   // through the section into a
   // color value.
+  // @v4 using new scale name
   var coughColorScale = d3.scaleLinear()
     .domain([0, 1.0])
     .range(['#008080', 'red']);
@@ -70,9 +75,11 @@ var scrollVis = function () {
   // use just one axis, modifying the
   // scale, but I will use two separate
   // ones to keep things easy.
+  // @v4 using new axis name
   var xAxisBar = d3.axisBottom()
     .scale(xBarScale);
 
+  // @v4 using new axis name
   var xAxisHist = d3.axisBottom()
     .scale(xHistScale)
     .tickFormat(function (d) { return d + ' min'; });
@@ -99,6 +106,7 @@ var scrollVis = function () {
       // create svg and give it a width and height
       svg = d3.select(this).selectAll('svg').data([wordData]);
       var svgE = svg.enter().append('svg');
+      // @v4 use merge to combine enter and existing selection
       svg = svg.merge(svgE);
 
       svg.attr('width', width + margin.left + margin.right);
@@ -126,7 +134,7 @@ var scrollVis = function () {
 
       // get aggregated histogram data
 
-      var histData = getHistogram(fillerWords, xHistScale);
+      var histData = getHistogram(fillerWords);
       // set histogram's domain
       var histMax = d3.max(histData, function (d) { return d.length; });
       yHistScale.domain([0, histMax]);
@@ -204,6 +212,8 @@ var scrollVis = function () {
       .attr('opacity', 0);
 
     // barchart
+    // @v4 Using .merge here to ensure
+    // new and old data have same attrs applied
     var bars = g.selectAll('.bar').data(fillerCounts);
     var barsE = bars.enter()
       .append('rect')
@@ -229,6 +239,8 @@ var scrollVis = function () {
       .attr('opacity', 0);
 
     // histogram
+    // @v4 Using .merge here to ensure
+    // new and old data have same attrs applied
     var hist = g.selectAll('.hist').data(histData);
     var histE = hist.enter().append('rect')
       .attr('class', 'hist');
@@ -687,6 +699,11 @@ var scrollVis = function () {
     var thirtyMins = data.filter(function (d) { return d.min < 30; });
     // bin data into 2 minutes chuncks
     // from 0 - 31 minutes
+    // @v4 The d3.histogram() produces a significantly different
+    // data structure then the old d3.layout.histogram().
+    // Take a look at this block:
+    // https://bl.ocks.org/mbostock/3048450
+    // to inform how you use it. Its different!
     return d3.histogram()
       .thresholds(xHistScale.ticks(10))
       .value(function (d) { return d.min; })(thirtyMins);
