@@ -34,15 +34,15 @@ var scrollVis = function() {
 
   // We will set the domain when the
   // data is processed.
-  var xBarScale = d3.scale.linear()
+  var xBarScale = d3.scaleLinear()
     .range([0, width]);
 
   // The bar chart display is horizontal
   // so we can use an ordinal scale
   // to get width and y locations.
-  var yBarScale = d3.scale.ordinal()
+  var yBarScale = d3.scaleBand()
     .domain([0,1,2])
-    .rangeBands([0, height - 50], 0.1, 0.1);
+    .range([0, height - 50], 0.1, 0.1);
 
   // Color is determined just by the index of the bars
   var barColors = {0: "#008080", 1: "#399785", 2: "#5AAF8C"};
@@ -50,18 +50,18 @@ var scrollVis = function() {
   // The histogram display shows the
   // first 30 minutes of data
   // so the range goes from 0 to 30
-  var xHistScale = d3.scale.linear()
+  var xHistScale = d3.scaleLinear()
     .domain([0, 30])
     .range([0, width - 20]);
 
-  var yHistScale = d3.scale.linear()
+  var yHistScale = d3.scaleLinear()
     .range([height, 0]);
 
   // The color translation uses this
   // scale to convert the progress
   // through the section into a
   // color value.
-  var coughColorScale = d3.scale.linear()
+  var coughColorScale = d3.scaleLinear()
     .domain([0,1.0])
     .range(["#008080", "red"]);
 
@@ -69,13 +69,11 @@ var scrollVis = function() {
   // use just one axis, modifying the
   // scale, but I will use two separate
   // ones to keep things easy.
-  var xAxisBar = d3.svg.axis()
-    .scale(xBarScale)
-    .orient("bottom");
+  var xAxisBar = d3.axisBottom()
+    .scale(xBarScale);
 
-  var xAxisHist = d3.svg.axis()
+  var xAxisHist = d3.axisBottom()
     .scale(xHistScale)
-    .orient("bottom")
     .tickFormat(function(d) { return d + " min"; });
 
   // When scrolling to a new section
@@ -99,10 +97,13 @@ var scrollVis = function() {
     selection.each(function(rawData) {
       // create svg and give it a width and height
       svg = d3.select(this).selectAll("svg").data([wordData]);
-      svg.enter().append("svg").append("g");
+      var svgE = svg.enter().append("svg")
+      svg = svg.merge(svgE)
 
       svg.attr("width", width + margin.left + margin.right);
       svg.attr("height", height + margin.top + margin.bottom);
+
+      svg.append('g');
 
 
       // this group element will be used to contain all
@@ -119,13 +120,15 @@ var scrollVis = function() {
       // bar chart display
       var fillerCounts = groupByWord(fillerWords);
       // set the bar scale's domain
-      var countMax = d3.max(fillerCounts, function(d) { return d.values;});
-      xBarScale.domain([0,countMax]);
+      var countMax = d3.max(fillerCounts, function(d) { return d.value;});
+      xBarScale.domain([0, countMax]);
 
       // get aggregated histogram data
-      var histData = getHistogram(fillerWords);
+
+      var histData = getHistogram(fillerWords, xHistScale);
       // set histogram's domain
-      var histMax = d3.max(histData, function(d) { return d.y; });
+      // var histMax = d3.max(histData, function(d) { return d[0].y; });
+      var histMax = d3.max(histData, function(d) { return d.length; })
       yHistScale.domain([0, histMax]);
 
       setupVis(wordData, fillerCounts, histData);
@@ -186,13 +189,14 @@ var scrollVis = function() {
       .attr("opacity", 0);
 
     // square grid
-    var squares = g.selectAll(".square").data(wordData);
-    squares.enter()
+    var squares = g.selectAll(".square").data(wordData, function(d) { return d.word; });
+    var squaresE = squares.enter()
       .append("rect")
+      .classed("square", true)
+    squares = squares.merge(squaresE)
       .attr("width", squareSize)
       .attr("height", squareSize)
       .attr("fill", "#fff")
-      .classed("square", true)
       .classed("fill-square", function(d) { return d.filler; })
       .attr("x", function(d) { return d.x;})
       .attr("y", function(d) { return d.y;})
@@ -200,14 +204,15 @@ var scrollVis = function() {
 
     // barchart
     var bars = g.selectAll(".bar").data(fillerCounts);
-    bars.enter()
+    var barsE = bars.enter()
       .append("rect")
       .attr("class", "bar")
+    bars = bars.merge(barsE)
       .attr("x", 0)
       .attr("y", function(d,i) { return yBarScale(i);})
       .attr("fill", function(d,i) { return barColors[i]; })
       .attr("width", 0)
-      .attr("height", yBarScale.rangeBand());
+      .attr("height", yBarScale.bandwidth());
 
     var barText = g.selectAll(".bar-text").data(fillerCounts);
     barText.enter()
@@ -217,19 +222,19 @@ var scrollVis = function() {
       .attr("x", 0)
       .attr("dx", 15)
       .attr("y", function(d,i) { return yBarScale(i);})
-      .attr("dy", yBarScale.rangeBand() / 1.2)
+      .attr("dy", yBarScale.bandwidth() / 1.2)
       .style("font-size", "110px")
       .attr("fill", "white")
       .attr("opacity", 0);
 
     // histogram
     var hist = g.selectAll(".hist").data(histData);
-    hist.enter().append("rect")
+    var histE = hist.enter().append("rect")
       .attr("class", "hist")
-      .attr("x", function(d) { return xHistScale(d.x); })
+    hist = hist.merge(histE).attr("x", function(d) { return xHistScale(d.x0); })
       .attr("y", height)
       .attr("height", 0)
-      .attr("width", xHistScale(histData[0].dx) - 1)
+      .attr("width", xHistScale(histData[0].x1) - xHistScale(histData[0].x0) - 1)
       .attr("fill", barColors[0])
       .attr("opacity", 0);
 
@@ -273,7 +278,7 @@ var scrollVis = function() {
   setupSections = function() {
     // activateFunctions are called each
     // time the active section changes
-    activateFunctions[0] = showTitle;
+    activateFunctions[0] = showTitle.bind(this);
     activateFunctions[1] = showFillerTitle;
     activateFunctions[2] = showGrid;
     activateFunctions[3] = highlightGrid;
@@ -448,7 +453,7 @@ var scrollVis = function() {
       .duration(800)
       .attr("x", 0)
       .attr("y", function(d,i) {
-        return yBarScale(i % 3) + yBarScale.rangeBand() / 2;
+        return yBarScale(i % 3) + yBarScale.bandwidth() / 2;
       })
       .transition()
       .duration(0)
@@ -465,7 +470,9 @@ var scrollVis = function() {
       .transition()
       .delay(function(d,i) { return 300 * (i + 1);})
       .duration(600)
-      .attr("width", function(d) { return xBarScale(d.values); });
+      .attr("width", function(d) {
+        console.log(d)
+        return xBarScale(d.value); });
 
     g.selectAll(".bar-text")
       .transition()
@@ -502,8 +509,8 @@ var scrollVis = function() {
     g.selectAll(".hist")
       .transition()
       .duration(600)
-      .attr("y", function(d) { return (d.x < 15) ? yHistScale(d.y) : height; })
-      .attr("height", function(d) { return (d.x < 15) ? height - yHistScale(d.y) : 0;  })
+      .attr("y", function(d) { return (d.x < 15) ? yHistScale(d.length) : height; })
+      .attr("height", function(d) { return (d.x < 15) ? height - yHistScale(d.length) : 0;  })
       .style("opacity", function(d,i) { return (d.x < 15) ? 1.0 : 1e-6; });
   }
 
@@ -536,8 +543,8 @@ var scrollVis = function() {
     g.selectAll(".hist")
       .transition()
       .duration(1200)
-      .attr("y", function(d) { return yHistScale(d.y); })
-      .attr("height", function(d) { return  height - yHistScale(d.y);  })
+      .attr("y", function(d) { return yHistScale(d.length); })
+      .attr("height", function(d) { return  height - yHistScale(d.length);  })
       .style("opacity", 1.0);
   }
 
@@ -557,8 +564,8 @@ var scrollVis = function() {
     g.selectAll(".hist")
       .transition()
       .duration(600)
-      .attr("y", function(d) { return yHistScale(d.y); })
-      .attr("height", function(d) { return  height - yHistScale(d.y);  })
+      .attr("y", function(d) { return yHistScale(d.length); })
+      .attr("height", function(d) { return  height - yHistScale(d.length);  })
       .style("opacity", 1.0);
   }
 
@@ -681,9 +688,9 @@ var scrollVis = function() {
     var thirtyMins = data.filter(function(d) { return d.min < 30; });
     // bin data into 2 minutes chuncks
     // from 0 - 31 minutes
-    return d3.layout.histogram()
+    return d3.histogram()
+      .thresholds(xHistScale.ticks(10))
       .value(function(d) { return d.min; })
-      .bins(d3.range(0,31,2))
       (thirtyMins);
   }
 
@@ -699,7 +706,7 @@ var scrollVis = function() {
       .key(function(d) { return d.word; })
       .rollup(function(v) { return v.length; })
       .entries(words)
-      .sort(function(a,b) {return b.values - a.values;});
+      .sort(function(a,b) {return b.value - a.value;});
   }
 
   /**
@@ -772,4 +779,3 @@ function display(data) {
 
 // load data and display
 d3.tsv("data/words.tsv", display);
-

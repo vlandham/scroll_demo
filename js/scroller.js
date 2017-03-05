@@ -53,9 +53,9 @@ function scroller() {
     // to be called once for
     // the scroll position on
     // load.
-    d3.timer(function() {
+    var timer = d3.timer(function() {
       position();
-      return true;
+      timer.stop();
     });
   }
 
@@ -94,14 +94,14 @@ function scroller() {
     sectionIndex = Math.min(sections.size() - 1, sectionIndex);
 
     if (currentIndex !== sectionIndex) {
-      dispatch.active(sectionIndex);
+      dispatch.call("active", this, sectionIndex);
       currentIndex = sectionIndex;
     }
 
     var prevIndex = Math.max(sectionIndex - 1, 0);
     var prevTop = sectionPositions[prevIndex];
     var progress = (pos - prevTop) / (sectionPositions[sectionIndex] - prevTop);
-    dispatch.progress(currentIndex, progress);
+    dispatch.call("progress", this, currentIndex, progress);
   }
 
   /**
@@ -123,7 +123,11 @@ function scroller() {
   // allows us to bind to scroller events
   // which will interally be handled by
   // the dispatcher.
-  d3.rebind(scroll, dispatch, "on");
+  // d3.rebind(scroll, dispatch, "on");
+
+  scroll.on = function(action, callback) {
+    dispatch.on(action, callback);
+  }
 
   return scroll;
 }
