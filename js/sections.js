@@ -62,7 +62,7 @@ var scrollVis = function() {
   // through the section into a
   // color value.
   var coughColorScale = d3.scaleLinear()
-    .domain([0,1.0])
+    .domain([0, 1.0])
     .range(["#008080", "red"]);
 
   // You could probably get fancy and
@@ -189,6 +189,8 @@ var scrollVis = function() {
       .attr("opacity", 0);
 
     // square grid
+    // @v4 Using .merge here to ensure
+    // new and old data have same attrs applied
     var squares = g.selectAll(".square").data(wordData, function(d) { return d.word; });
     var squaresE = squares.enter()
       .append("rect")
@@ -278,7 +280,7 @@ var scrollVis = function() {
   setupSections = function() {
     // activateFunctions are called each
     // time the active section changes
-    activateFunctions[0] = showTitle.bind(this);
+    activateFunctions[0] = showTitle;
     activateFunctions[1] = showFillerTitle;
     activateFunctions[2] = showGrid;
     activateFunctions[3] = highlightGrid;
@@ -470,9 +472,7 @@ var scrollVis = function() {
       .transition()
       .delay(function(d,i) { return 300 * (i + 1);})
       .duration(600)
-      .attr("width", function(d) {
-        console.log(d)
-        return xBarScale(d.value); });
+      .attr("width", function(d) { return xBarScale(d.value); });
 
     g.selectAll(".bar-text")
       .transition()
@@ -509,9 +509,9 @@ var scrollVis = function() {
     g.selectAll(".hist")
       .transition()
       .duration(600)
-      .attr("y", function(d) { return (d.x < 15) ? yHistScale(d.length) : height; })
-      .attr("height", function(d) { return (d.x < 15) ? height - yHistScale(d.length) : 0;  })
-      .style("opacity", function(d,i) { return (d.x < 15) ? 1.0 : 1e-6; });
+      .attr("y", function(d) { return (d.x0 < 15) ? yHistScale(d.length) : height; })
+      .attr("height", function(d) { return (d.x0 < 15) ? height - yHistScale(d.length) : 0;  })
+      .style("opacity", function(d,i) { return (d.x0 < 15) ? 1.0 : 1e-6; });
   }
 
   /**
@@ -622,8 +622,8 @@ var scrollVis = function() {
     g.selectAll(".hist")
       .transition("cough")
       .duration(0)
-      .style("fill", function(d,i) {
-        return (d.x >= 14) ? coughColorScale(progress) : "#008080";
+      .style("fill", function(d, i) {
+        return (d.x0 >= 14) ? coughColorScale(progress) : "#008080";
       });
   }
 
