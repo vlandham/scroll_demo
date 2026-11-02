@@ -57,5 +57,15 @@
 <script src="lib/d3.js"></script>
 <script src="js/scroller.js"></script>
 <script src="js/sections.js"></script>
+  <!-- Cloudflare Web Analytics (same site token as vallandingham.me); production only -->
+  <script>
+    if (location.hostname === 'vallandingham.me' || location.hostname === 'www.vallandingham.me') {
+      var beacon = document.createElement('script');
+      beacon.defer = true;
+      beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+      beacon.dataset.cfBeacon = JSON.stringify({ token: '2b4df352ecf04cab9fc322e072c3ef88' });
+      document.body.appendChild(beacon);
+    }
+  </script>
 </body>
 </html>
